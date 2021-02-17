@@ -108,7 +108,7 @@ The function returns pairs of (atoms - elements)"
 	(setq elem (cdr elem))))
       ;; Update list pairs
       (setq pairs (cons p1 pairs))
-      (setq pairs (cons (string-to-int p2) pairs)))
+      (setq pairs (cons (string-to-number p2) pairs)))
     ;; return pairs
     pairs))
 
