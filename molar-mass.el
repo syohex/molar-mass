@@ -5,6 +5,7 @@
 ;;
 ;; Author: Sergi Ruiz Trepat
 ;; Created: 2021
+;; Package-Commit: 0fad6c891b56c11962773e6863d4d1df2ec4fc1c
 ;; Version: 0.1
 ;; Keywords: chemistry
 ;; Homepage: https://github.com/sergiruiztrepat/molar-mass.el
