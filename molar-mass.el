@@ -157,7 +157,7 @@ The function returns pairs of (atoms - elements)"
       (setq list (cdr list)))
     (reverse $cut-list)))
 
-(setq elements-mass
+(defconst molar-mass-elements-mass
       '(
 	("H" 1.0079)
 	("He" 4.0026)
