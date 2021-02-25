@@ -29,134 +29,6 @@
 ;;
 ;;; Code:
 
-(defun molar-mass ()
-  "Calculates molar mass of a molecule."
-  (interactive)
-  (let* ((data (if (region-active-p)
-		   (buffer-substring-no-properties
-		    (region-beginning)
-		    (region-end))
-		 (read-string "Formula: ")))
-	 (elements (mapcar 'char-to-string data))
-	 (elements-aux '()))   ;; auxiliar list to clean blanks and
-    ;; dashes in the next while
-    
-    (while elements
-      (if (not (equal (car elements) (or " " "-")))
-	  (push (car elements) elements-aux))
-      (setq elements (cdr elements)))
-    (setq elements (reverse elements-aux))
-	 
-    (print
-     (format "Molar mass of %s : %.3f g/mol (uma)"   ;; 3 decimal digits
-	     data
-	     (molar-mass-total-mass (molar-mass-pairs-list elements))))))
-
-(defun molar-mass-total-mass (elem)
-  "ELEM is a processed list of pairs (atoms - atomic mass).
-Returns the total mass of the molecule."
-  (let (($total-mass 0))
-    (while elem
-      (setq $total-mass
-	    (+ $total-mass
-	       (* (car elem) (cadr elem))))
-      (setq elem (cddr elem)))
-    $total-mass))
-
-(defun molar-mass-pairs-list (elem)
-  "ELEM is a list of chars from the original string representing a molecule.
-The function returns pairs of (atoms - elements)"
-  (let (p1 ;;first element of a pair (symbol)
-	p2 ;; second element of a pair (number)
-	(pairs '()))
-    (while (>= (length elem) 1)
-      (cond
-       ;; If paren in list, molar-mass-cut-list-in and call recursively.
-       ((member "(" elem)
-	(setq p2 (cadr (member ")" elem)))
-	(setq p1 (molar-mass-total-mass
-		  (molar-mass-pairs-list (molar-mass-cut-list-in elem "(" ")"))))
-	(setq elem (molar-mass-cut-list-out elem "(" ")")))
-	       
-       ;; If first is upcase (element) and second is number
-       ((and (molar-mass-upcase-p (car elem))
-	     (molar-mass-number-p (cadr elem)))
-	(setq p1 (cadr (assoc (car elem) elements-mass)))
-	(if (not (molar-mass-number-p (caddr elem)))
-	    (progn
-	      (setq p2 (cadr elem))
-	      (setq elem (cddr elem)))
-	  ;; If there's two numbers
-	  (progn
-	    (setq p2 (concat (cadr elem) (caddr elem)))
-	    (setq elem (cdddr elem)))))
-
-       ;; If first is upcase and second downcase (one element)
-       ((and (molar-mass-upcase-p (car elem))
-	     (and (not (molar-mass-upcase-p (cadr elem)))
-		  (not (molar-mass-number-p (cadr elem)))))
-	(setq p1 (cadr (assoc (concat (car elem) (cadr elem)) elements-mass)))
-	(if (molar-mass-number-p (caddr elem))
-	    (progn
-	      (setq p2 (caddr elem))
-	      (setq elem (cdddr elem))
-	      ;; If there're two numbers
-	      (if (molar-mass-number-p (car elem))
-		  (progn
-		    (setq p2 (concat p2 (car elem)))
-		    (setq elem (cdr elem)))))
-	  (progn
-	    (setq p2 "1")
-	    (setq elem (cddr elem)))))
-
-       ;; If there're two upcase letters (two elements)
-       ((and (molar-mass-upcase-p (car elem))
-	     (molar-mass-upcase-p (cadr elem)))
-	(setq p1 (cadr (assoc (car elem) elements-mass)))
-	(setq p2 "1")
-	(setq elem (cdr elem))))
-      ;; Update list pairs
-      (setq pairs (cons p1 pairs))
-      (setq pairs (cons (string-to-number p2) pairs)))
-    ;; return pairs
-    pairs))
-
-(defun molar-mass-upcase-p (char)
-  "Return t if CHAR is upcase, nil if not."
-  (setq case-fold-search nil)
-  (ignore-errors
-    (if (string-match-p "[A-Z]" char) t)))
-
-(defun molar-mass-number-p (char)
-  "Return t if CHAR is a number, nil if not."
-  (ignore-errors
-    (if (string-match-p "[0-9]" char) t)))
-
-(defun molar-mass-cut-list-in (list first last)
-  "Cut LIST and return another list with elements between FIRST and LAST."
-  (let (($cut-list '())) ;; list to return
-    (setq list (cdr (member first list)))
-    (while (and list (not (equal (car list) last)))
-      (push (car list) $cut-list)
-      (setq list (cdr list)))
-    (reverse $cut-list)))
-    
-(defun molar-mass-cut-list-out (list first last)
-  "Cut LIST and return another list with elements not between FIRST and LAST."
-  (let (($cut-list '()))
-    (while (not (equal (car list) first))
-      (push (car list) $cut-list)
-      (setq list (cdr list)))
-
-    (while (not (equal (car list) last))
-      (pop list))
-    
-    (setq list (cddr list))
-    (while list
-      (push (car list) $cut-list)
-      (setq list (cdr list)))
-    (reverse $cut-list)))
-
 (defconst molar-mass-elements-mass
       '(
 	("H" 1.0079)
@@ -268,6 +140,134 @@ The function returns pairs of (atoms - elements)"
 	("Sg" 266.00)
 	("Mt" 268.00)
 	("Hs" 277.00)))
+
+(defun molar-mass ()
+  "Calculates molar mass of a molecule."
+  (interactive)
+  (let* ((data (if (region-active-p)
+		   (buffer-substring-no-properties
+		    (region-beginning)
+		    (region-end))
+		 (read-string "Formula: ")))
+	 (elements (mapcar 'char-to-string data))
+	 (elements-aux '()))   ;; auxiliar list to clean blanks and
+    ;; dashes in the next while
+    
+    (while elements
+      (if (not (equal (car elements) (or " " "-")))
+	  (push (car elements) elements-aux))
+      (setq elements (cdr elements)))
+    (setq elements (reverse elements-aux))
+	 
+    (print
+     (format "Molar mass of %s : %.3f g/mol (uma)"   ;; 3 decimal digits
+	     data
+	     (molar-mass-total-mass (molar-mass-pairs-list elements))))))
+
+(defun molar-mass-total-mass (elem)
+  "ELEM is a processed list of pairs (atoms - atomic mass).
+Returns the total mass of the molecule."
+  (let (($total-mass 0))
+    (while elem
+      (setq $total-mass
+	    (+ $total-mass
+	       (* (car elem) (cadr elem))))
+      (setq elem (cddr elem)))
+    $total-mass))
+
+(defun molar-mass-pairs-list (elem)
+  "ELEM is a list of chars from the original string representing a molecule.
+The function returns pairs of (atoms - elements)"
+  (let (p1 ;;first element of a pair (symbol)
+	p2 ;; second element of a pair (number)
+	(pairs '()))
+    (while (>= (length elem) 1)
+      (cond
+       ;; If paren in list, molar-mass-cut-list-in and call recursively.
+       ((member "(" elem)
+	(setq p2 (cadr (member ")" elem)))
+	(setq p1 (molar-mass-total-mass
+		  (molar-mass-pairs-list (molar-mass-cut-list-in elem "(" ")"))))
+	(setq elem (molar-mass-cut-list-out elem "(" ")")))
+	       
+       ;; If first is upcase (element) and second is number
+       ((and (molar-mass-upcase-p (car elem))
+	     (molar-mass-number-p (cadr elem)))
+	(setq p1 (cadr (assoc (car elem) molar-mass-elements-mass)))
+	(if (not (molar-mass-number-p (caddr elem)))
+	    (progn
+	      (setq p2 (cadr elem))
+	      (setq elem (cddr elem)))
+	  ;; If there's two numbers
+	  (progn
+	    (setq p2 (concat (cadr elem) (caddr elem)))
+	    (setq elem (cdddr elem)))))
+
+       ;; If first is upcase and second downcase (one element)
+       ((and (molar-mass-upcase-p (car elem))
+	     (and (not (molar-mass-upcase-p (cadr elem)))
+		  (not (molar-mass-number-p (cadr elem)))))
+	(setq p1 (cadr (assoc (concat (car elem) (cadr elem)) molar-mass-elements-mass)))
+	(if (molar-mass-number-p (caddr elem))
+	    (progn
+	      (setq p2 (caddr elem))
+	      (setq elem (cdddr elem))
+	      ;; If there're two numbers
+	      (if (molar-mass-number-p (car elem))
+		  (progn
+		    (setq p2 (concat p2 (car elem)))
+		    (setq elem (cdr elem)))))
+	  (progn
+	    (setq p2 "1")
+	    (setq elem (cddr elem)))))
+
+       ;; If there're two upcase letters (two elements)
+       ((and (molar-mass-upcase-p (car elem))
+	     (molar-mass-upcase-p (cadr elem)))
+	(setq p1 (cadr (assoc (car elem) molar-mass-elements-mass)))
+	(setq p2 "1")
+	(setq elem (cdr elem))))
+      ;; Update list pairs
+      (setq pairs (cons p1 pairs))
+      (setq pairs (cons (string-to-number p2) pairs)))
+    ;; return pairs
+    pairs))
+
+(defun molar-mass-upcase-p (char)
+  "Return t if CHAR is upcase, nil if not."
+  (setq case-fold-search nil)
+  (ignore-errors
+    (if (string-match-p "[A-Z]" char) t)))
+
+(defun molar-mass-number-p (char)
+  "Return t if CHAR is a number, nil if not."
+  (ignore-errors
+    (if (string-match-p "[0-9]" char) t)))
+
+(defun molar-mass-cut-list-in (list first last)
+  "Cut LIST and return another list with elements between FIRST and LAST."
+  (let (($cut-list '())) ;; list to return
+    (setq list (cdr (member first list)))
+    (while (and list (not (equal (car list) last)))
+      (push (car list) $cut-list)
+      (setq list (cdr list)))
+    (reverse $cut-list)))
+    
+(defun molar-mass-cut-list-out (list first last)
+  "Cut LIST and return another list with elements not between FIRST and LAST."
+  (let (($cut-list '()))
+    (while (not (equal (car list) first))
+      (push (car list) $cut-list)
+      (setq list (cdr list)))
+
+    (while (not (equal (car list) last))
+      (pop list))
+    
+    (setq list (cddr list))
+    (while list
+      (push (car list) $cut-list)
+      (setq list (cdr list)))
+    (reverse $cut-list)))
 
 (provide 'molar-mass)
 
